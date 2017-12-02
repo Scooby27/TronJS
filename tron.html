@@ -59,7 +59,7 @@
                 let speed = player1.speed;
                 let direction = player1.direction;
                 player1.move();
-                player1.leaveTrail(x, y, speed, direction);
+                player1.leaveTrail(x, y, speed, player1.direction);
                 turnCount[1] += player1.speed;
 
                 x = player2.x;
@@ -67,7 +67,7 @@
                 speed = player2.speed;
                 direction = player2.direction;
                 player2.move();
-                player2.leaveTrail(x, y, speed, direction);
+                player2.leaveTrail(x, y, speed, player2.direction);
                 turnCount[2] += player2.speed;
 
                 if (crashed()) {
@@ -230,12 +230,16 @@
                     trail = document.createElement("div");
                     trail.id = this.id + this.noOfTrails.toString();
                     trail.className = "trail";
-                    trail.style.width = direction.x === 0 ? 10 : speed * 1;
-                    trail.style.height = direction.y === 0 ? 10 : speed * 1;
+                    trail.style.width = direction.x === 0 ? 10 : speed;
+                    trail.style.height = direction.y === 0 ? 10 : speed;
+                    if (direction.x === -1) trail.style.width = 10;
+                    if (direction.y === -1) trail.style.height = 10;
                     trail.style.backgroundColor = colour;
                     trail.style.position = "absolute";
-                    trail.style.left = this.x - direction.x * (direction.x === 1 ? 0 : 10 - seed);
-                    trail.style.top = this.y - direction.y * (direction.y === 1 ? 0 : 10 - seed);
+                    if (direction.y === -1) trail.style.top = y + 10; trail.style.left = x;
+                    if (direction.y === 1) trail.style.top = y; trail.style.left = x;
+                    if (direction.x === -1) trail.style.top = y; trail.style.left = x + 10;
+                    if (direction.x === 1) trail.style.top = y; trail.style.left = x;
                     $("#board")[0].appendChild(trail);
                 } else {
                     const currentWidth = parseInt(trail.style.width);
