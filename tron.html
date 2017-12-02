@@ -6,7 +6,6 @@
             height: 500px;
             width: 700px;
             background-color: white;
-            border: 2px solid #d7d7d7;
             margin: auto;
         }
 
@@ -28,88 +27,167 @@
     <script>
 
         let player1;
+        let player2;
         let playerCount = 1;
-        let turnCount = 0;
-        let waitingPress = null;
-        let history = [];
+        let turnCount = { 1: 0, 2: 0 };
+        let waitingPress = { 1: null, 2: null };
+        let history = {};
 
         function startGame() {
             $("#start").hide();
             listenForKeyDowns();
             player1 = new player("cyan");
-            const enemy = new player("magenta");
+            player2 = new player("magenta");
             const gameplay = setInterval(function () {
-                if (turnCount === 10) {
-                    turnCount = 0;
-                    if (waitingPress) {
-                        keydownHandler(waitingPress);
-                        waitingPress = null;
+                if (turnCount[1] === 10) {
+                    turnCount[1] = 0;
+                    if (waitingPress[1]) {
+                        keydownHandler(waitingPress[1]);
+                        waitingPress[1] = null;
+                    }
+                }
+
+                if (turnCount[2] === 10) {
+                    turnCount[2] = 0;
+                    if (waitingPress[2]) {
+                        keydownHandler(waitingPress[2]);
+                        waitingPress[2] = null;
                     }
                 }
                 let x = player1.x;
                 let y = player1.y;
                 let speed = player1.speed;
+                let direction = player1.direction;
                 player1.move();
-                player1.leaveTrail(x, y, speed, player1.direction);
-                turnCount += player1.speed;
+                player1.leaveTrail(x, y, speed, direction);
+                turnCount[1] += player1.speed;
+
+                x = player2.x;
+                y = player2.y;
+                speed = player2.speed;
+                direction = player2.direction;
+                player2.move();
+                player2.leaveTrail(x, y, speed, direction);
+                turnCount[2] += player2.speed;
 
                 if (crashed()) {
                     clearInterval(gameplay);
                     alert("CRASH BANG WALLOP, what a video.");
-                    reset();
+                    //reset();
                 }
             }, 10);
         }
 
         function listenForKeyDowns() {
             $(document).on("keydown", function (e) {
-                if (!waitingPress) {
-                    keydownHandler(e);
-                }
+                keydownHandler(e);
             });
         }
 
         function keydownHandler(e) {
-            if (turnCount === 0) {
-                switch (e.keyCode) {
-                    case 32:
+            switch (e.keyCode) {
+                case 77:
+                    if (turnCount[2] === 0) {
+                        e.preventDefault();
+                        if (player2.boosts > 0 && !player2.isBoosting) {
+                            player2.isBoosting = true;
+                            player2.boosts--;
+                            player2.changeSpeed(2);
+                        }
+                    } else {
+                        waitingPress[2] = e;
+                    }
+                    break;
+                case 37:
+                    if (turnCount[2] === 0) {
+                        if (player2.direction.x != 1) {
+                            player2.changeDirection({ x: -1, y: 0 });
+                        }
+                    } else {
+                        waitingPress[2] = e;
+                    }
+                    break;
+                case 38:
+                    if (turnCount[2] === 0) {
+                        if (player2.direction.y != 1) {
+                            player2.changeDirection({ x: 0, y: -1 });
+                        }
+                    } else {
+                        waitingPress[2] = e;
+                    }
+                    break;
+                case 39:
+                    if (turnCount[2] === 0) {
+                        if (player2.direction.x != -1) {
+                            player2.changeDirection({ x: 1, y: 0 });
+                        }
+                    } else {
+                        waitingPress[2] = e;
+                    }
+                    break;
+                case 40:
+                    if (turnCount[2] === 0) {
+                        if (player2.direction.y != -1) {
+                            player2.changeDirection({ x: 0, y: 1 });
+                        }
+                    } else {
+                        waitingPress[2] = e;
+                    }
+                    break;
+                case 49:
+                    if (turnCount[1] === 0) {
                         e.preventDefault();
                         if (player1.boosts > 0 && !player1.isBoosting) {
                             player1.isBoosting = true;
                             player1.boosts--;
                             player1.changeSpeed(2);
                         }
-                        break;
-                    case 37:
+                    } else {
+                        waitingPress[1] = e;
+                    }
+                    break;
+                case 65:
+                    if (turnCount[1] === 0) {
                         if (player1.direction.x != 1) {
                             player1.changeDirection({ x: -1, y: 0 });
                         }
-                        break;
-                    case 38:
+                    } else {
+                        waitingPress[1] = e;
+                    }
+                    break;
+                case 87:
+                    if (turnCount[1] === 0) {
                         if (player1.direction.y != 1) {
                             player1.changeDirection({ x: 0, y: -1 });
                         }
-                        break;
-                    case 39:
+                    } else {
+                        waitingPress[1] = e;
+                    }
+                    break;
+                case 68:
+                    if (turnCount[1] === 0) {
                         if (player1.direction.x != -1) {
                             player1.changeDirection({ x: 1, y: 0 });
                         }
-                        break;
-                    case 40:
-                        if (turnCount === 0)
-                            if (player1.direction.y != -1) {
-                                player1.changeDirection({ x: 0, y: 1 });
-                            }
-                        break;
-                }
-            } else {
-                waitingPress = e;
+                    } else {
+                        waitingPress[1] = e;
+                    }
+                    break;
+                case 83:
+                    if (turnCount[1] === 0) {
+                        if (player1.direction.y != -1) {
+                            player1.changeDirection({ x: 0, y: 1 });
+                        }
+                    } else {
+                        waitingPress[1] = e;
+                    }
+                    break;
             }
         }
 
         function player(colour) {
             const boardPositions = getBoardPositions();
-            this.x = boardPositions.left + playerCount * (boardPositions.right - boardPositions.left) / 4;
+            this.x = boardPositions.left + Math.ceil(((boardPositions.left + playerCount * (boardPositions.right - boardPositions.left) / 4) - boardPositions.left)/10)*10;
             this.y = boardPositions.top + (boardPositions.bottom - boardPositions.top) / 2 - 10;
             this.colour = colour;
             this.direction = { x: 0, y: -1 };
@@ -118,15 +196,17 @@
             this.isBoosting = false;
             this.id = "player_" + playerCount;
             this.boostCount = 0;
-            this.history = [];
+            this.noOfTrails = 0;
+            this.previousDirection = this.direction;
             this.changeDirection = function (direction) {
+                this.previousDirection = this.direction;
                 this.direction = direction;
             };
             this.changeSpeed = function (speed) {
                 this.speed = speed;
             };
             this.move = function () {
-                history.push(this.x + "," + this.y);
+                history[this.x + "," + this.y] = true;
                 this.x += this.direction.x * this.speed;
                 this.y += this.direction.y * this.speed;
                 $("#" + this.id)[0].style.left = this.x;
@@ -142,16 +222,31 @@
                 }
             };
             this.leaveTrail = function (x, y, speed, direction) {
-                const trail = document.createElement("div");
-                trail.className = "trail";
-                trail.style.width = direction.x === 0 ? 10 : speed * 1;
-                trail.style.height = direction.y === 0 ? 10 : speed * 1;
-                trail.style.backgroundColor = colour;
-                trail.style.position = "absolute";
+                let trail = document.getElementById(this.id + this.noOfTrails.toString());
                 const seed = speed === 2 && turnCount !== 10 ? 1 : 0;
-                trail.style.left = x - direction.x * (direction.x === 1 ? 0 : 9 - seed);
-                trail.style.top = y - direction.y * (direction.y === 1 ? 0 : 9 - seed);
-                $("#board")[0].appendChild(trail);
+                if (this.previousDirection != direction || trail === null){
+                    this.previousDirection = this.direction;
+                    this.noOfTrails++;
+                    trail = document.createElement("div");
+                    trail.id = this.id + this.noOfTrails.toString();
+                    trail.className = "trail";
+                    trail.style.width = direction.x === 0 ? 10 : speed * 1;
+                    trail.style.height = direction.y === 0 ? 10 : speed * 1;
+                    trail.style.backgroundColor = colour;
+                    trail.style.position = "absolute";
+                    trail.style.left = this.x - direction.x * (direction.x === 1 ? 0 : 10 - seed);
+                    trail.style.top = this.y - direction.y * (direction.y === 1 ? 0 : 10 - seed);
+                    $("#board")[0].appendChild(trail);
+                } else {
+                    const currentWidth = parseInt(trail.style.width);
+                    const currentHeight = parseInt(trail.style.height);
+                    trail.style.width = direction.x === 0 ? 10 : speed + currentWidth;
+                    trail.style.height = direction.y === 0 ? 10 : speed + currentHeight;
+                    if (this.direction.x === -1) trail.style.left = x;
+                    if (this.direction.x === 0) trail.style.left = x; 
+                    if (this.direction.y === -1) trail.style.top = y;
+                }
+                
             }
 
             const playerIcon = document.createElement("div");
@@ -168,21 +263,23 @@
 
         function crashed() {
             let crashed = false;
-            
-            const boardPositions = getBoardPositions();
-            if (player1.x < boardPositions.left || (player1.x + 10) > boardPositions.right || (player1.y + 10) > boardPositions.bottom || player1.y < boardPositions.top) {
+
+            if (playerCrashedIntoWall(player1) || playerCrashedIntoWall(player2)) {
                 crashed = true;
             } else {
-                const currentCoordinates = player1.x + "," + player1.y;
-                for (let i = 0; i < history.length; i++) {
-                    if (currentCoordinates === history[i]){
-                        crashed = true;
-                        break;
-                    }
+                const currentCoordinates1 = player1.x + "," + player1.y;
+                const currentCoordinates2 = player2.x + "," + player2.y;
+                if (history[currentCoordinates1] || history[currentCoordinates2]) {
+                    crashed = true;
                 }
             }
 
             return crashed;
+        }
+
+        function playerCrashedIntoWall(player) {
+            const boardPositions = getBoardPositions();
+            return player.x < boardPositions.left || (player.x + 10) > boardPositions.right || (player.y + 10) > boardPositions.bottom || player.y < boardPositions.top;
         }
 
         function getBoardPositions() {
@@ -197,7 +294,7 @@
 
         function reset() {
             $("#board").empty();
-            history = [];
+            history = {};
             playerCount = 1;
             $("#start").show();
         }
