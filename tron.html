@@ -1,0 +1,226 @@
+<head>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+    <style>
+        .board {
+            height: 500px;
+            width: 700px;
+            background-color: white;
+            border: 2px solid #d7d7d7;
+            margin: auto;
+        }
+
+        .start {
+            background-color: white;
+            border: 1px solid blue;
+            border-radius: 12px;
+        }
+
+        html {
+            background-image: url("blue-stripes.gif");
+        }
+    </style>
+</head>
+
+<body>
+    <div id="board" class="board"></div>
+    <button class="start" onclick="startGame()">Start</button>
+    <script>
+
+        let player1;
+        let playerCount = 1;
+        let turnCount = 0;
+        let waitingPress = null;
+
+        function startGame() {
+            listenForKeyDowns();
+            player1 = new player("cyan");
+            const enemy = new player("magenta");
+            const gameplay = setInterval(function () {
+                if (turnCount === 10) {
+                    turnCount = 0;
+                    if (waitingPress) {
+                        keydownHandler(waitingPress);
+                        waitingPress = null;
+                    }
+                }
+                let x = player1.x;
+                let y = player1.y;
+                let speed = player1.speed;
+                player1.move();
+                //if (player1.speed < speed) speed = player1.speed;
+                player1.leaveTrail(x, y, speed, player1.direction);
+                turnCount += player1.speed;
+
+                if (crashed()) {
+                    clearInterval(gameplay);
+                    alert("CRASH BANG WALLOP, what a video.");
+                    reset();
+                }
+            }, 10);
+        }
+
+        function listenForKeyDowns() {
+            $(document).on("keydown", function (e) {
+                if (!waitingPress) {
+                    keydownHandler(e);
+                }
+            });
+        }
+
+        function keydownHandler(e) {
+            if (turnCount === 0) {
+                switch (e.keyCode) {
+                    case 32:
+                        e.preventDefault();
+                        if (player1.boosts > 0 && !player1.isBoosting) {
+                            player1.isBoosting = true;
+                            player1.boosts--;
+                            player1.changeSpeed(2);
+                        }
+                        break;
+                    case 37:
+                        if (player1.direction.x != 1) {
+                            player1.changeDirection({ x: -1, y: 0 });
+                        }
+                        break;
+                    case 38:
+                        if (player1.direction.y != 1) {
+                            player1.changeDirection({ x: 0, y: -1 });
+                        }
+                        break;
+                    case 39:
+                        if (player1.direction.x != -1) {
+                            player1.changeDirection({ x: 1, y: 0 });
+                        }
+                        break;
+                    case 40:
+                        if (turnCount === 0)
+                            if (player1.direction.y != -1) {
+                                player1.changeDirection({ x: 0, y: 1 });
+                            }
+                        break;
+                }
+            } else {
+                waitingPress = e;
+            }
+        }
+
+        function player(colour) {
+            const boardPositions = getBoardPositions();
+            this.x = boardPositions.left + playerCount * (boardPositions.right - boardPositions.left) / 4;
+            this.y = boardPositions.top + (boardPositions.bottom - boardPositions.top) / 2 - 10;
+            this.colour = colour;
+            this.direction = { x: 0, y: -1 };
+            this.speed = 1;
+            this.boosts = 3;
+            this.isBoosting = false;
+            this.id = "player_" + playerCount;
+            this.boostCount = 0;
+            this.changeDirection = function (direction) {
+                this.direction = direction;
+            };
+            this.changeSpeed = function (speed) {
+                this.speed = speed;
+            };
+            this.move = function () {
+                this.x += this.direction.x * this.speed;
+                this.y += this.direction.y * this.speed;
+                $("#" + this.id)[0].style.left = this.x;
+                $("#" + this.id)[0].style.top = this.y;
+                if (this.isBoosting) {
+                    if (this.boostCount !== 100) {
+                        this.boostCount++;
+                    } else {
+                        this.boostCount = 0;
+                        this.isBoosting = false;
+                        this.changeSpeed(1);
+                    }
+                }
+            };
+            this.leaveTrail = function (x, y, speed, direction) {
+                const trail = document.createElement("div");
+                trail.className = "trail";
+                trail.style.width = direction.x === 0 ? 10 : speed * 1;
+                trail.style.height = direction.y === 0 ? 10 : speed * 1;
+                trail.style.backgroundColor = colour;
+                trail.style.position = "absolute";
+                trail.style.left = x - direction.x * (direction.x === 1 ? 0 : 9);
+                trail.style.top = y - direction.y * (direction.y === 1 ? 0 : 9);
+                $("#board")[0].appendChild(trail);
+            }
+
+            const playerIcon = document.createElement("div");
+            playerIcon.id = this.id;
+            playerIcon.style.width = 10;
+            playerIcon.style.height = 10;
+            playerIcon.style.backgroundColor = colour;
+            playerIcon.style.position = "absolute";
+            playerIcon.style.left = this.x;
+            playerIcon.style.top = this.y;
+            $("#board")[0].appendChild(playerIcon);
+            playerCount += 2;
+        }
+
+        function crashed() {
+            let crashed = false;
+            const boardPositions = getBoardPositions();
+            if (player1.x < boardPositions.left || (player1.x + 10) > boardPositions.right || (player1.y + 10) > boardPositions.bottom || player1.y < boardPositions.top) {
+                crashed = true;
+            }
+            const trails = $(".trail");
+
+            const playerDiv = $("#player_1")[0];
+            for (let i = 0; i < trails.length; i++) {
+                if (isObjOnObj(playerDiv, trails[i])) {
+                    crashed = true;
+                    break;
+                }
+            }
+            return crashed;
+        }
+
+        function isObjOnObj(a, b) {
+            var al = a.offsetLeft;
+            var ar = a.offsetLeft + a.offsetWidth;
+            var bl = b.offsetLeft;
+            var br = b.offsetLeft + b.offsetWidth;
+
+            var at = a.offsetTop;
+            var ab = a.offsetTop + a.offsetHeight;
+            var bt = b.offsetTop;
+            var bb = b.offsetTop + b.offsetHeight;
+
+            // if(bl>ar || br<al){return false;}//overlap not possible
+            // if(bt>ab || bb<at){return false;}//overlap not possible
+
+            // if(bl>al && bl<ar){return true;}
+            // if(br>al && br<ar){return true;}
+
+            // if(bt>at && bt<ab){return true;}
+            // if(bb>at && bb<ab){return true;}
+
+            // return false;
+
+            return !(ar <= bl ||
+                al >= br ||
+                ab <= bt ||
+                at >= bb);
+        }
+
+        function getBoardPositions() {
+            const result = {};
+            const board = document.getElementById("board");
+            result.top = board.offsetTop;
+            result.bottom = board.offsetTop + board.offsetHeight;
+            result.left = board.offsetLeft;
+            result.right = board.offsetLeft + board.offsetWidth;
+            return result;
+        }
+
+        function reset() {
+            $("#board").empty();
+            playerCount = 1;
+        }
+    </script>
+</body>
