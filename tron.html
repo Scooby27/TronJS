@@ -4,7 +4,7 @@
     <style>
         .board {
             height: 500px;
-            width: 700px;
+            width: 500px;
             background-color: white;
             margin: auto;
         }
@@ -13,10 +13,13 @@
             background-color: white;
             border: 1px solid blue;
             border-radius: 12px;
+            margin-top: 5px;
+            display: inline-block;
         }
 
         html {
             background-image: url("blue-stripes.gif");
+            text-align: center;
         }
     </style>
 </head>
@@ -25,6 +28,7 @@
     <div id="board" class="board"></div>
     <button id="start" type="button" class="start" onclick="startGame()">Start</button>
     <script>
+        $("#start").focus();
 
         let player1;
         let player2;
@@ -59,7 +63,7 @@
                 let speed = player1.speed;
                 let direction = player1.direction;
                 player1.move();
-                player1.leaveTrail(x, y, speed, direction);
+                player1.leaveTrail(x, y, speed, player1.direction);
                 turnCount[1] += player1.speed;
 
                 x = player2.x;
@@ -67,13 +71,13 @@
                 speed = player2.speed;
                 direction = player2.direction;
                 player2.move();
-                player2.leaveTrail(x, y, speed, direction);
+                player2.leaveTrail(x, y, speed, player2.direction);
                 turnCount[2] += player2.speed;
 
                 if (crashed()) {
                     clearInterval(gameplay);
                     alert("CRASH BANG WALLOP, what a video.");
-                    //reset();
+                    reset();
                 }
             }, 10);
         }
@@ -184,10 +188,11 @@
                     break;
             }
         }
-
+        time = 40;
         function player(colour) {
             const boardPositions = getBoardPositions();
-            this.x = boardPositions.left + Math.ceil(((boardPositions.left + playerCount * (boardPositions.right - boardPositions.left) / 4) - boardPositions.left)/10)*10;
+            this.x = boardPositions.left + time;
+            time = 450;
             this.y = boardPositions.top + (boardPositions.bottom - boardPositions.top) / 2 - 10;
             this.colour = colour;
             this.direction = { x: 0, y: -1 };
@@ -212,6 +217,8 @@
                 $("#" + this.id)[0].style.left = this.x;
                 $("#" + this.id)[0].style.top = this.y;
                 if (this.isBoosting) {
+                    const missedTrail = this.x - this.direction.x + "," + this.y - this.direction.y;
+                    history[missedTrail] = true;
                     if (this.boostCount !== 100) {
                         this.boostCount++;
                     } else {
@@ -230,12 +237,16 @@
                     trail = document.createElement("div");
                     trail.id = this.id + this.noOfTrails.toString();
                     trail.className = "trail";
-                    trail.style.width = direction.x === 0 ? 10 : speed * 1;
-                    trail.style.height = direction.y === 0 ? 10 : speed * 1;
+                    trail.style.width = direction.x === 0 ? 10 : speed;
+                    trail.style.height = direction.y === 0 ? 10 : speed;
+                    if (direction.x === -1) trail.style.width = 10;
+                    if (direction.y === -1) trail.style.height = 10;
                     trail.style.backgroundColor = colour;
                     trail.style.position = "absolute";
-                    trail.style.left = this.x - direction.x * (direction.x === 1 ? 0 : 10 - seed);
-                    trail.style.top = this.y - direction.y * (direction.y === 1 ? 0 : 10 - seed);
+                    if (direction.y === -1) trail.style.top = y + 10; trail.style.left = x;
+                    if (direction.y === 1) trail.style.top = y; trail.style.left = x;
+                    if (direction.x === -1) trail.style.top = y; trail.style.left = x + 10;
+                    if (direction.x === 1) trail.style.top = y; trail.style.left = x;
                     $("#board")[0].appendChild(trail);
                 } else {
                     const currentWidth = parseInt(trail.style.width);
@@ -296,7 +307,9 @@
             $("#board").empty();
             history = {};
             playerCount = 1;
+            time = 40;
             $("#start").show();
+            $("#start").focus();
         }
     </script>
 </body>
