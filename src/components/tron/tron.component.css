@@ -1,0 +1,14 @@
+.board {
+    height: 500px;
+    width: 500px;
+    background-color: white;
+    margin: auto;
+}
+
+.start {
+    background-color: white;
+    border: 1px solid blue;
+    border-radius: 12px;
+    margin-top: 5px;
+    display: inline-block;
+}

@@ -1,0 +1,7 @@
+<div id="board" class="board">
+    <div *ngIf="player1 !== null">
+        <div id="player1" [style.backgroundColor]="player1.colour" [style.top]="player1.position().y + 'px'" [style.left]="player1.position().x + 'px'" style="width: 10px; height: 10px; position: absolute"></div>
+        <div id="player2" [style.backgroundColor]="player2.colour" [style.top]="player2.position().y + 'px'" [style.left]="player2.position().x + 'px'" style="width: 10px; height: 10px; position: absolute"></div>
+    </div>
+</div>
+<button id="start" type="button" class="start" (click)="startGame()">Start</button>
